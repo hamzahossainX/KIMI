@@ -1,0 +1,77 @@
+# Builds the static export and publishes it to GitHub Pages.
+#
+# One-time setup: in the repository, go to Settings -> Pages and set
+# "Source" to "GitHub Actions". No other configuration and no secrets are
+# required; the workflow authenticates with the automatic GITHUB_TOKEN.
+#
+# Site URL: https://hamzahossainX.github.io/KIMI/
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Never cancel an in-flight deployment: a half-published site is worse than a
+# queued one. Queue instead, and let the newest run land last.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build static export
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Install dependencies
+        run: npm ci
+
+      # GITHUB_PAGES=true flips next.config.mjs into static-export mode and
+      # applies the /KIMI basePath required by a project Pages site.
+      - name: Build
+        run: npm run build
+        env:
+          GITHUB_PAGES: 'true'
+
+      # Stops GitHub Pages from running the output through Jekyll, which would
+      # otherwise drop Next.js paths beginning with an underscore (_next).
+      - name: Disable Jekyll processing
+        run: touch out/.nojekyll
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./out
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
