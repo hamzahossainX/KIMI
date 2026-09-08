@@ -25,8 +25,13 @@ jobs:
   build:
     name: Build static export
     runs-on: ubuntu-latest
+    # Any permission not listed here is set to `none`, so the Pages read scope
+    # has to be spelled out: `actions/configure-pages` reads the repository's
+    # Pages settings (GET /repos/{owner}/{repo}/pages) and fails the job
+    # without it. Write access stays confined to the deploy job below.
     permissions:
       contents: read
+      pages: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -50,9 +55,11 @@ jobs:
         env:
           GITHUB_PAGES: 'true'
 
-      # Stops GitHub Pages from running the output through Jekyll, which would
-      # otherwise drop Next.js paths beginning with an underscore (_next).
-      - name: Disable Jekyll processing
+      # Belt and braces. With Pages sourced from Actions the uploaded artifact
+      # is served exactly as built, so nothing touches `_next/`. This marker
+      # only matters if the repository is ever switched to branch-based
+      # publishing, where Jekyll would skip underscore-prefixed paths.
+      - name: Add .nojekyll marker
         run: touch out/.nojekyll
 
       - name: Upload artifact

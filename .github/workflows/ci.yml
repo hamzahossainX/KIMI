@@ -3,8 +3,14 @@
 # Scope note: this repository has no test suite and no committed ESLint
 # configuration, so CI verifies exactly what can be verified — that the
 # dependency tree installs from the lockfile, that the TypeScript project
-# typechecks under `strict`, and that a production build succeeds on every
-# supported Node.js major.
+# typechecks under `strict`, and that a production build succeeds on each
+# Node.js major in the matrix below.
+#
+# `package.json` declares no `engines` range, so that matrix is the only
+# statement this repository makes about Node.js support. Its floor is 18,
+# the oldest major `next@14.2.3` accepts (`>=18.17.0`); 18 and 20 are past
+# upstream end-of-life and are tested as compatibility floors, not as
+# recommended runtimes.
 name: CI
 
 on:
